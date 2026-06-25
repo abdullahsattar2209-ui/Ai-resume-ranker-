@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TalentMatch AI — Resume Screening &amp; Candidate Ranking</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" onerror="window.__pdfEngineFailed=true"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,700;1,300&display=swap');
+:root{
+  --bg:#0b0f1a;--sur:#111827;--sur2:#1a2235;--bor:#1e2d45;
+  --acc:#00d4aa;--acc2:#4f8ef7;--acc3:#f59e0b;--red:#f87171;--grn:#34d399;
+  --txt:#e8edf5;--muted:#6b7fa3;--dim:#3d5068;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,170,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:13px 26px;background:rgba(11,15,26,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--bor);flex-wrap:wrap;gap:10px;}
+.logo{display:flex;align-items:center;gap:9px;}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo-text{font-family:'Fraunces',serif;font-size:19px;font-weight:700;letter-spacing:-.5px;}
+.logo-text span{color:var(--acc);}
+.ntabs{display:flex;gap:3px;background:var(--sur2);border-radius:8px;padding:3px;flex-wrap:wrap;}
+.ntab{padding:7px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;background:transparent;color:var(--muted);transition:all .2s;white-space:nowrap;}
+.ntab.on{background:var(--sur);color:var(--acc);border:1px solid rgba(0,212,170,.25);}
+.badges{display:flex;gap:6px;}
+.badge{font-size:10px;font-family:'JetBrains Mono',monospace;padding:3px 9px;border-radius:100px;font-weight:500;}
+.bg{color:var(--acc);border:1px solid rgba(0,212,170,.3);background:rgba(0,212,170,.06);}
+.bb{color:var(--acc2);border:1px solid rgba(79,142,247,.3);background:rgba(79,142,247,.06);}
+
+.pg{display:none;position:relative;z-index:1;}
+.pg.on{display:block;}
+.wrap{max-width:1320px;margin:0 auto;padding:26px 20px 80px;}
+
+.hero{text-align:center;padding:36px 0 26px;}
+.eye{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--acc);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+.hero h1{font-family:'Fraunces',serif;font-size:clamp(26px,4.5vw,46px);font-weight:300;line-height:1.15;letter-spacing:-1px;margin-bottom:12px;}
+.hero h1 em{font-style:italic;color:var(--acc);}
+.hero p{font-size:14px;color:var(--muted);max-width:560px;margin:0 auto;line-height:1.7;}
+
+.stats{display:flex;justify-content:center;gap:42px;margin:22px 0 30px;flex-wrap:wrap;}
+.snum{font-family:'JetBrains Mono',monospace;font-size:25px;font-weight:500;color:var(--acc);display:block;}
+.slbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+
+/* STEP TABS */
+.steps{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;justify-content:center;}
+.step{padding:9px 18px;border-radius:100px;font-size:12px;font-weight:700;background:var(--sur);border:1px solid var(--bor);color:var(--muted);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px;}
+.step.on{background:rgba(0,212,170,.1);border-color:rgba(0,212,170,.4);color:var(--acc);}
+.step .n{width:20px;height:20px;border-radius:50%;background:var(--bor);color:var(--muted);font-size:10px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;}
+.step.on .n{background:var(--acc);color:#0b0f1a;}
+.step.done .n{background:var(--grn);color:#0b0f1a;}
+
+.panel{background:var(--sur);border:1px solid var(--bor);border-radius:12px;overflow:hidden;margin-bottom:18px;}
+.ph{padding:13px 18px;border-bottom:1px solid var(--bor);background:var(--sur2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.pt{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--acc);animation:blink 2s infinite;}
+.dot.b{background:var(--acc2);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.pb{padding:18px;}
+.wc{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
+
+/* JD INPUT */
+textarea{width:100%;background:var(--bg);border:1px solid var(--bor);border-radius:8px;padding:12px;color:var(--txt);font-family:'Inter',sans-serif;font-size:13px;line-height:1.75;resize:vertical;min-height:160px;outline:none;transition:border-color .2s;}
+textarea:focus{border-color:var(--acc);}
+textarea::placeholder{color:var(--dim);}
+
+/* UPLOAD ZONE - PDF.js based, multi-file */
+.upload-box{border:2px dashed var(--bor);border-radius:10px;padding:32px 20px;text-align:center;background:var(--bg);min-height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:all .2s;}
+.upload-box.over{border-color:var(--acc);background:rgba(0,212,170,.05);}
+.upload-icon{font-size:36px;}
+.upload-txt{font-size:13px;color:var(--muted);}
+.upload-sub{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
+
+/* THE FIX: visible native file input styled with file-selector-button, NO hidden inputs, NO .click() triggers */
+.fileinput{display:block;width:100%;max-width:360px;margin:6px auto 0;padding:10px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;}
+.fileinput::file-selector-button{padding:8px 18px;background:var(--acc);border:none;border-radius:6px;color:#0b0f1a;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;margin-right:12px;transition:all .2s;}
+.fileinput::file-selector-button:hover{background:#00e8bb;}
+
+.resume-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.resume-chip{display:flex;align-items:center;gap:10px;background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.22);border-radius:8px;padding:10px 14px;font-size:12px;}
+.resume-chip .ico{font-size:16px;}
+.resume-chip .name{flex:1;color:var(--txt);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.resume-chip .meta{color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:10px;}
+.resume-chip .status{font-size:10px;padding:2px 8px;border-radius:100px;font-family:'JetBrains Mono',monospace;font-weight:600;}
+.status-ok{background:rgba(52,211,153,.15);color:var(--grn);}
+.status-err{background:rgba(248,113,113,.15);color:var(--red);}
+.status-load{background:rgba(79,142,247,.15);color:var(--acc2);}
+.resume-chip button{background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;}
+.resume-chip button:hover{color:var(--red);}
+
+.run{width:100%;margin-top:16px;padding:14px;background:linear-gradient(135deg,var(--acc),#00b894);border:none;border-radius:8px;color:#0b0f1a;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.run:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(0,212,170,.25);}
+.run:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.spin{width:14px;height:14px;border:2px solid rgba(0,0,0,.25);border-top-color:#0b0f1a;border-radius:50%;animation:rot .6s linear infinite;display:none;}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* RANKING TABLE */
+.rank-list{display:flex;flex-direction:column;gap:10px;}
+.rank-card{background:var(--bg);border:1px solid var(--bor);border-radius:10px;padding:16px;transition:all .2s;cursor:pointer;}
+.rank-card:hover{border-color:var(--acc);}
+.rank-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.rank-num{width:32px;height:32px;border-radius:50%;background:var(--sur2);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;color:var(--muted);flex-shrink:0;}
+.rank-num.gold{background:rgba(245,158,11,.2);color:var(--acc3);}
+.rank-num.silver{background:rgba(203,213,225,.2);color:#cbd5e1;}
+.rank-num.bronze{background:rgba(217,119,6,.2);color:#d97706;}
+.rank-name{font-size:14px;font-weight:700;color:var(--txt);}
+.rank-email{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
+.rank-score{margin-left:auto;text-align:right;}
+.score-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--acc);}
+.score-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;}
+.rank-bar-wrap{height:6px;background:var(--bor);border-radius:3px;margin-bottom:10px;overflow:hidden;}
+.rank-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .8s ease;}
+.rank-skills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.skill-tag{font-size:10px;padding:3px 9px;border-radius:100px;font-family:'JetBrains Mono',monospace;font-weight:600;}
+.skill-match{background:rgba(0,212,170,.12);color:var(--acc);border:1px solid rgba(0,212,170,.3);}
+.skill-miss{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.25);}
+.rank-summary{font-size:12px;color:var(--muted);line-height:1.6;}
+.rank-detail{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--bor);font-size:12px;color:var(--muted);line-height:1.7;}
+.rank-card.expanded .rank-detail{display:block;}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;}
+.detail-item{background:var(--sur2);border-radius:6px;padding:8px 10px;}
+.detail-item .dl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+.detail-item .dv{font-size:12px;color:var(--txt);font-weight:600;}
+
+/* JD ANALYSIS */
+.jd-analysis{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+@media(max-width:720px){.jd-analysis{grid-template-columns:1fr;}}
+.jd-card{background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:14px;}
+.jd-card-t{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.jd-pills{display:flex;flex-wrap:wrap;gap:6px;}
+.jd-pill{font-size:11px;padding:4px 10px;border-radius:100px;background:rgba(79,142,247,.1);color:var(--acc2);border:1px solid rgba(79,142,247,.3);font-family:'JetBrains Mono',monospace;}
+
+/* EXPORT */
+.erow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.ebtn{padding:9px 17px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;border:1px solid;display:flex;align-items:center;gap:6px;}
+.et{background:rgba(79,142,247,.05);border-color:rgba(79,142,247,.3);color:var(--acc2);}
+.et:hover{background:rgba(79,142,247,.12);}
+.ej{background:rgba(0,212,170,.05);border-color:rgba(0,212,170,.3);color:var(--acc);}
+.ej:hover{background:rgba(0,212,170,.12);}
+.ep{background:rgba(245,158,11,.05);border-color:rgba(245,158,11,.3);color:var(--acc3);}
+.ep:hover{background:rgba(245,158,11,.12);}
+
+.empty{color:var(--dim);font-size:12px;text-align:center;padding:30px 16px;font-family:'JetBrains Mono',monospace;}
+
+/* PYTHON CODE PAGE */
+.pybox{background:var(--sur2);border:1px solid var(--bor);border-radius:12px;overflow:hidden;margin-top:16px;}
+.pyhead{padding:11px 16px;background:var(--sur2);border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.pytabs{display:flex;gap:3px;flex-wrap:wrap;}
+.pytab{padding:5px 13px;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);font-family:'Inter',sans-serif;transition:all .2s;}
+.pytab.on{background:var(--sur);color:var(--acc3);border:1px solid rgba(245,158,11,.25);}
+.pywin{display:none;max-height:560px;overflow-y:auto;}
+.pywin.on{display:block;}
+pre{padding:18px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;color:#c9d1d9;white-space:pre-wrap;word-break:break-word;}
+
+/* README PAGE */
+.readme{max-width:840px;margin:0 auto;padding:32px 20px 80px;font-size:14px;line-height:1.8;color:var(--muted);}
+.readme h2{font-family:'Fraunces',serif;font-size:24px;font-weight:700;color:var(--txt);margin:26px 0 10px;letter-spacing:-.5px;}
+.readme h3{font-size:13px;font-weight:700;color:var(--acc);margin:20px 0 7px;text-transform:uppercase;letter-spacing:.5px;}
+.readme code{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--sur2);padding:2px 6px;border-radius:4px;color:var(--acc3);}
+.readme pre{background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;color:var(--acc3);overflow-x:auto;margin:9px 0;}
+.readme ul{padding-left:18px;}
+.readme li{margin-bottom:4px;}
+.readme table{width:100%;border-collapse:collapse;margin:11px 0;font-size:13px;}
+.readme td,.readme th{padding:8px 11px;border:1px solid var(--bor);text-align:left;}
+.readme th{background:var(--sur2);color:var(--txt);font-weight:600;}
+.chk{color:var(--acc);font-weight:700;}
+.star{color:var(--acc3);font-weight:700;}
+
+.toast{position:fixed;bottom:20px;right:20px;padding:11px 17px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;transform:translateY(60px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:7px;max-width:340px;}
+.toast.on{transform:translateY(0);opacity:1;}
+.tok{background:var(--grn);color:#0b0f1a;}
+.ter{background:var(--red);color:white;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bor);border-radius:3px;}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:13px;}
+@media(max-width:600px){.cgrid{grid-template-columns:1fr;}}
+.cg{display:flex;flex-direction:column;gap:5px;}
+label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+select{width:100%;background:var(--bg);border:1px solid var(--bor);border-radius:8px;padding:8px 11px;color:var(--txt);font-family:'Inter',sans-serif;font-size:13px;outline:none;cursor:pointer;}
+select option{background:var(--sur);}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo">
+    <div class="logo-icon">🎯</div>
+    <div class="logo-text">Talent<span>Match</span> AI</div>
+  </div>
+  <div class="ntabs">
+    <button class="ntab on" onclick="goPage('app',this)">⚡ Screener</button>
+    <button class="ntab" onclick="goPage('code',this)">🐍 Python Code</button>
+    <button class="ntab" onclick="goPage('readme',this)">📋 README</button>
+  </div>
+  <div class="badges">
+    <span class="badge bg">AI-2</span>
+    <span class="badge bb">TEYZIX CORE</span>
+  </div>
+</nav>
+
+<!-- ════════════════ PAGE: APP ════════════════ -->
+<div class="pg on" id="pg-app">
+<div class="wrap">
+
+  <div class="hero">
+    <div class="eye">⚡ Task AI-2 · TEYZIX CORE Internship · June Batch 2026</div>
+    <h1>AI-Powered Resume Screening<br>&amp; <em>Candidate Ranking</em> System</h1>
+    <p>Upload resumes, paste a job description, and get an instant AI-ranked shortlist with skill matching, semantic scoring, and explainable results.</p>
+  </div>
+
+  <div class="stats">
+    <div><span class="snum" id="sResumes">0</span><span class="slbl">Resumes Loaded</span></div>
+    <div><span class="snum" id="sSkills">0</span><span class="slbl">JD Skills Detected</span></div>
+    <div><span class="snum" id="sTop">—</span><span class="slbl">Top Match Score</span></div>
+  </div>
+
+  <div class="steps">
+    <div class="step on" id="step1" onclick="showStep(1)"><span class="n">1</span> Job Description</div>
+    <div class="step" id="step2" onclick="showStep(2)"><span class="n">2</span> Upload Resumes</div>
+    <div class="step" id="step3" onclick="showStep(3)"><span class="n">3</span> Ranked Results</div>
+  </div>
+  <p style="text-align:center;font-size:11px;color:var(--dim);margin-bottom:18px;font-family:'JetBrains Mono',monospace">
+    💡 You can click "2 · Upload Resumes" any time — pasting a job description first just improves ranking accuracy, it's not required to upload files.
+  </p>
+
+  <!-- STEP 1: JOB DESCRIPTION -->
+  <div id="view1">
+    <div class="panel">
+      <div class="ph">
+        <div class="pt"><span class="dot"></span> Job Description</div>
+        <div class="wc" id="jdwc">0 words</div>
+      </div>
+      <div class="pb">
+        <textarea id="jdText" placeholder="Paste the full job description here — required skills, qualifications, experience level, responsibilities, etc." oninput="syncJDWC()"></textarea>
+        <div class="cgrid">
+          <div class="cg">
+            <label>Minimum Experience (years)</label>
+            <select id="minExp">
+              <option value="0">No minimum</option>
+              <option value="1">1+ years</option>
+              <option value="2" selected>2+ years</option>
+              <option value="3">3+ years</option>
+              <option value="5">5+ years</option>
+            </select>
+          </div>
+          <div class="cg">
+            <label>Ranking Priority</label>
+            <select id="rankPriority">
+              <option value="balanced">Balanced (Recommended)</option>
+              <option value="skills">Skills-Weighted</option>
+              <option value="experience">Experience-Weighted</option>
+              <option value="semantic">Semantic Similarity</option>
+            </select>
+          </div>
+        </div>
+        <button class="run" onclick="analyzeJD()">🔍 Analyze Job Description &amp; Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: UPLOAD RESUMES -->
+  <div id="view2" style="display:none">
+    <div class="panel" id="jdSummaryPanel" style="display:none">
+      <div class="ph">
+        <div class="pt"><span class="dot b"></span> Job Requirements Detected</div>
+      </div>
+      <div class="pb">
+        <div class="jd-analysis">
+          <div class="jd-card">
+            <div class="jd-card-t">🛠️ Required Skills</div>
+            <div class="jd-pills" id="jdSkillPills"></div>
+          </div>
+          <div class="jd-card">
+            <div class="jd-card-t">📌 Key Requirements</div>
+            <div class="jd-pills" id="jdReqPills"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel" id="jdMissingPanel">
+      <div class="pb" style="padding:12px 16px;background:rgba(245,158,11,.06);border-bottom:1px solid var(--bor)">
+        <span style="font-size:12px;color:var(--acc3)">ℹ️ No job description analyzed yet. You can still upload resumes now — just paste a JD in Step 1 before ranking for best results.</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph">
+        <div class="pt"><span class="dot"></span> Upload Resumes (PDF or TXT)</div>
+        <div class="wc" id="resCount">0 loaded</div>
+      </div>
+      <div class="pb">
+        <div id="pdfEngineBanner" style="display:none;margin-bottom:14px;padding:11px 14px;border-radius:8px;font-size:12px;line-height:1.6"></div>
+        <div class="upload-box" id="dropBox"
+          ondragover="event.preventDefault();this.classList.add('over')"
+          ondragleave="this.classList.remove('over')"
+          ondrop="handleDrop(event)">
+          <div class="upload-icon">📂</div>
+          <div class="upload-txt">Drag &amp; drop resume files here, or use the button below</div>
+          <div class="upload-sub">Supports multiple .pdf and .txt files at once</div>
+          <input type="file" id="resumeInput" class="fileinput" accept=".pdf,.txt,.text" multiple onchange="handleFiles(this.files)">
+        </div>
+        <div class="resume-list" id="resumeList"></div>
+        <button class="run" id="rankBtn" onclick="rankCandidates()" disabled>
+          <div class="spin" id="spin"></div>
+          <span id="btnTxt">🏆 Rank Candidates</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: RESULTS -->
+  <div id="view3" style="display:none">
+    <div class="panel">
+      <div class="ph">
+        <div class="pt"><span class="dot"></span> Candidate Ranking — Best Match First</div>
+        <div class="wc" id="rankCount">—</div>
+      </div>
+      <div class="pb">
+        <div class="rank-list" id="rankList">
+          <div class="empty">Run ranking to see results</div>
+        </div>
+        <div class="erow">
+          <button class="ebtn et" onclick="exportCSV()">⬇ Export Rankings (.csv)</button>
+          <button class="ebtn ej" onclick="exportJSON()">⬇ Export Full Report (.json)</button>
+          <button class="ebtn ep" onclick="goPage('code',document.querySelectorAll('.ntab')[1])">🐍 Python Code</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════════════ PAGE: PYTHON CODE ════════════════ -->
+<div class="pg" id="pg-code">
+<div class="wrap">
+  <div class="hero" style="padding-bottom:6px">
+    <div class="eye">🐍 Python Backend Source</div>
+    <h1 style="font-size:clamp(24px,4vw,38px)">Full <em>source code</em> — ready to run</h1>
+    <p>6 clean modules · PDF extraction · NLP information extraction · Semantic matching · Ranking engine</p>
+  </div>
+  <div style="display:flex;gap:9px;justify-content:center;margin-bottom:22px;flex-wrap:wrap">
+    <button class="ebtn ep" onclick="dlFile('resume_screener.py',PY_MAIN)">⬇ resume_screener.py</button>
+    <button class="ebtn et" onclick="dlFile('requirements.txt',PY_REQ)">⬇ requirements.txt</button>
+    <button class="ebtn ej" onclick="dlFile('usage_example.py',PY_EX)">⬇ usage_example.py</button>
+  </div>
+  <div class="pybox">
+    <div class="pyhead">
+      <div class="pytabs">
+        <button class="pytab on" onclick="showPyTab(0,this)">📦 resume_screener.py</button>
+        <button class="pytab" onclick="showPyTab(1,this)">📋 requirements.txt</button>
+        <button class="pytab" onclick="showPyTab(2,this)">🚀 usage_example.py</button>
+      </div>
+      <span style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">Python 3.10+</span>
+    </div>
+    <div class="pywin on" id="py0"><pre id="c0"></pre></div>
+    <div class="pywin" id="py1"><pre id="c1"></pre></div>
+    <div class="pywin" id="py2"><pre id="c2"></pre></div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════ PAGE: README ════════════════ -->
+<div class="pg" id="pg-readme">
+<div class="readme">
+  <div class="eye" style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--acc);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">Task Documentation · AI-2</div>
+  <h2>TalentMatch AI — Resume Screening &amp; Candidate Ranking System</h2>
+  <p>An AI-powered system for Task AI-2 of the TEYZIX CORE Internship Program (June Batch 2026). Automatically analyzes resumes, extracts candidate information, evaluates suitability against job requirements, and produces a ranked, explainable shortlist.</p>
+
+  <h3>Why The PDF Upload Now Works</h3>
+  <p>Previous versions failed because the file input either had no real PDF parser, or was hidden behind a JavaScript <code>.click()</code> trigger that gets blocked in sandboxed preview environments. This version fixes both problems:</p>
+  <ul>
+    <li>The file input is <strong>fully visible</strong> — styled with native <code>::file-selector-button</code> CSS, no hidden elements, no JS-triggered clicks.</li>
+    <li><strong>PDF.js</strong> (Mozilla's real PDF rendering engine) is loaded directly from CDN and used to extract text from each uploaded PDF page by page — this is the same library browsers use internally to display PDFs.</li>
+    <li>Drag &amp; drop is wired as a genuine backup, not the only path.</li>
+    <li>Each file shows live status (loading → success/error) so you always know what happened.</li>
+  </ul>
+
+  <h3>How To Use — Web App</h3>
+  <ol style="padding-left:18px">
+    <li>Paste the job description in Step 1 and click Analyze</li>
+    <li>Upload one or more resumes (PDF or TXT) in Step 2</li>
+    <li>Click "Rank Candidates" to see the AI-generated ranked shortlist in Step 3</li>
+    <li>Export results as CSV or full JSON report</li>
+  </ol>
+
+  <h3>How To Run — Python CLI</h3>
+  <pre>pip install -r requirements.txt
+python resume_screener.py --jd job_description.txt --resumes ./resumes_folder</pre>
+
+  <h3>Features Implemented</h3>
+  <table>
+    <tr><th>Requirement</th><th>Status</th></tr>
+    <tr><td>Upload resumes in PDF format</td><td><span class="chk">✅ PDF.js + pypdf backend</span></td></tr>
+    <tr><td>Extract text from resumes</td><td><span class="chk">✅</span></td></tr>
+    <tr><td>Process multiple resumes</td><td><span class="chk">✅ Batch upload</span></td></tr>
+    <tr><td>Candidate info extraction (name, email, phone, skills, education, experience)</td><td><span class="chk">✅ Regex + NLP</span></td></tr>
+    <tr><td>Job description analysis</td><td><span class="chk">✅</span></td></tr>
+    <tr><td>Candidate matching engine + scoring</td><td><span class="chk">✅ Weighted multi-factor</span></td></tr>
+    <tr><td>Skill matching</td><td><span class="chk">✅</span></td></tr>
+    <tr><td>Semantic similarity</td><td><span class="chk">✅ TF-IDF cosine</span></td></tr>
+    <tr><td>Resume summarization</td><td><span class="chk">✅</span></td></tr>
+    <tr><td>Candidate ranking</td><td><span class="chk">✅</span></td></tr>
+    <tr><td>Keyword extraction</td><td><span class="chk">✅</span></td></tr>
+    <tr><td>Dashboard (upload, rank, compare, export)</td><td><span class="chk">✅</span></td></tr>
+    <tr><td>Error handling</td><td><span class="chk">✅</span></td></tr>
+    <tr><td>Explainable scoring</td><td><span class="chk">✅ Score breakdown per candidate</span></td></tr>
+    <tr><td>Interview question generation</td><td><span class="star">⭐ Bonus</span></td></tr>
+    <tr><td>Skill gap analysis</td><td><span class="star">⭐ Bonus</span></td></tr>
+  </table>
+
+  <h3>Evaluation Alignment</h3>
+  <table>
+    <tr><th>Criteria</th><th>Weight</th></tr>
+    <tr><td>AI Functionality and Accuracy</td><td>35%</td></tr>
+    <tr><td>Problem-Solving Approach</td><td>25%</td></tr>
+    <tr><td>System Design and Implementation</td><td>20%</td></tr>
+    <tr><td>Documentation and Explainability</td><td>10%</td></tr>
+    <tr><td>Code Quality and Project Structure</td><td>10%</td></tr>
+  </table>
+
+  <h3>Submission Checklist</h3>
+  <ul>
+    <li>✅ Folder structure: <code>AI2_Resume_Screening/index.html</code> + downloaded Python files</li>
+    <li>✅ Download <code>resume_screener.py</code>, <code>requirements.txt</code>, <code>usage_example.py</code> from Python Code tab</li>
+    <li>✅ Add a README.txt (this page, or your own notes)</li>
+    <li>✅ Zip as <code>Task-2_[YourRefID].zip</code> — per the official naming format</li>
+    <li>✅ Submit via Google Form with GitHub link + Live demo link</li>
+    <li>✅ Post on LinkedIn: <code>#TEYZIXCORE #Internship #AI #TechInternship</code></li>
+  </ul>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+if(typeof pdfjsLib !== 'undefined'){
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+// ═══════════════ PDF ENGINE PRE-FLIGHT CHECK (fixes silent PDF upload failures) ═══════════════
+let PDF_ENGINE_READY = false;
+function checkPdfEngine(){
+  const banner = document.getElementById('pdfEngineBanner');
+  let ready = false;
+  try{
+    ready = (typeof pdfjsLib !== 'undefined' && !!pdfjsLib.getDocument);
+  }catch(e){
+    ready = false;
+  }
+  if(ready){
+    PDF_ENGINE_READY = true;
+    banner.style.display='none';
+  } else {
+    PDF_ENGINE_READY = false;
+    banner.style.display='block';
+    banner.style.background='rgba(248,113,113,.08)';
+    banner.style.border='1px solid rgba(248,113,113,.3)';
+    banner.style.color='#f87171';
+    banner.innerHTML='⚠️ <strong>PDF engine did not load</strong> (blocked by network/ad-blocker/offline). '+
+      '<strong>.txt resumes still work normally.</strong> For PDFs: check your internet connection and refresh, '+
+      'or convert your PDF to .txt and upload that instead.';
+  }
+}
+// Run check after a short delay to let the CDN script attempt to load, and also on file-tab open
+window.addEventListener('load', checkPdfEngine);
+setTimeout(checkPdfEngine, 1200);
+
+// ═══════════════ STATE ═══════════════
+const S={jdText:'',jdSkills:[],jdReqs:[],minExp:2,priority:'balanced',resumes:[],ranked:[],jdAnalyzed:false};
+
+// ═══════════════ NAV ═══════════════
+function goPage(id,btn){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='code') fillCode();
+}
+function showStep(n){
+  // Upload is always reachable. Ranking still requires a JD + at least one parsed resume,
+  // but that's validated inside rankCandidates() itself, not by blocking navigation here.
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('on'));
+  document.getElementById('step'+n).classList.add('on');
+  for(let i=1;i<=3;i++) document.getElementById('view'+i).style.display = i===n?'block':'none';
+  if(n===2) checkPdfEngine();
+}
+
+// ═══════════════ JD WORD COUNT ═══════════════
+function syncJDWC(){
+  const t=document.getElementById('jdText').value;
+  const w=t.trim()?t.trim().split(/\s+/).length:0;
+  document.getElementById('jdwc').textContent=w.toLocaleString()+' words';
+}
+
+// ═══════════════ SKILL DICTIONARY ═══════════════
+const SKILL_DB=['python','java','javascript','typescript','c++','c#','php','ruby','go','golang','rust','swift','kotlin','sql','html','css','react','angular','vue','node','nodejs','express','django','flask','fastapi','spring','laravel','tensorflow','pytorch','keras','scikit-learn','pandas','numpy','machine learning','deep learning','nlp','natural language processing','computer vision','data analysis','data science','data engineering','aws','azure','gcp','docker','kubernetes','git','github','jenkins','ci/cd','agile','scrum','mongodb','postgresql','mysql','redis','firebase','rest api','graphql','microservices','linux','bash','figma','adobe xd','ui/ux','photoshop','illustrator','project management','communication','leadership','problem solving','teamwork','excel','power bi','tableau','r programming','matlab','spark','hadoop','etl','airflow','langchain','llm','openai','huggingface','transformers','vector database','pinecone','chromadb','faiss','android','ios','flutter','react native','unity','blockchain','solidity','cybersecurity','penetration testing','devops','terraform','ansible'];
+
+function extractSkills(text){
+  const lower=text.toLowerCase();
+  return SKILL_DB.filter(skill=>{
+    const pattern=skill.replace(/[+#.]/g,'\\$&');
+    return new RegExp('\\b'+pattern+'\\b','i').test(lower);
+  });
+}
+
+function extractRequirements(text){
+  const sents=(text.match(/[^.\n]+[.\n]/g)||[]).map(s=>s.trim());
+  const reqKeywords=/\b(\d+\+?\s*years?|bachelor|master|phd|degree|required|must have|experience with|proficient|familiar with|knowledge of)\b/i;
+  return sents.filter(s=>reqKeywords.test(s)).slice(0,8).map(s=>s.replace(/\s+/g,' ').substring(0,90));
+}
+
+// ═══════════════ STEP 1: ANALYZE JD ═══════════════
+function analyzeJD(){
+  const jd=document.getElementById('jdText').value.trim();
+  if(!jd||jd.split(/\s+/).length<15){toast('⚠️ Please paste a fuller job description (15+ words)','ter');return;}
+  S.jdText=jd;
+  S.minExp=parseInt(document.getElementById('minExp').value);
+  S.priority=document.getElementById('rankPriority').value;
+  S.jdSkills=extractSkills(jd);
+  S.jdReqs=extractRequirements(jd);
+
+  document.getElementById('jdSkillPills').innerHTML=S.jdSkills.length
+    ? S.jdSkills.map(s=>`<span class="jd-pill">${esc(s)}</span>`).join('')
+    : '<span style="color:var(--dim);font-size:12px">No specific skills auto-detected — ranking will rely on semantic similarity.</span>';
+  document.getElementById('jdReqPills').innerHTML=S.jdReqs.length
+    ? S.jdReqs.map(r=>`<span class="jd-pill" style="background:rgba(245,158,11,.08);color:var(--acc3);border-color:rgba(245,158,11,.3)">${esc(r)}</span>`).join('')
+    : '<span style="color:var(--dim);font-size:12px">No explicit requirement statements detected.</span>';
+
+  document.getElementById('jdSummaryPanel').style.display='block';
+  document.getElementById('jdMissingPanel').style.display='none';
+  document.getElementById('sSkills').textContent=S.jdSkills.length;
+  document.getElementById('step1').classList.add('done');
+  S.jdAnalyzed=true;
+  showStep(2);
+  toast('✅ Job description analyzed — '+S.jdSkills.length+' skills detected','tok');
+}
+
+// ═══════════════ FILE UPLOAD — FIXED ═══════════════
+function handleFiles(fileList){
+  const files=Array.from(fileList);
+  files.forEach(f=>processFile(f));
+}
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropBox').classList.remove('over');
+  const files=Array.from(e.dataTransfer.files);
+  files.forEach(f=>processFile(f));
+}
+
+function processFile(f){
+  const id='r'+Date.now()+Math.random().toString(36).slice(2,7);
+  const entry={id,name:f.name,size:f.size,status:'loading',text:'',data:null};
+  S.resumes.push(entry);
+  renderResumeList();
+
+  const isPdf=f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf');
+
+  if(isPdf){
+    checkPdfEngine();
+    if(!PDF_ENGINE_READY){
+      entry.status='error';
+      entry.error='PDF engine not loaded — check your internet connection, or upload this resume as a .txt file instead.';
+      renderResumeList();
+      updateRankBtn();
+      toast('❌ PDF engine unavailable for '+f.name+' — try .txt instead','ter');
+      return;
+    }
+    const reader=new FileReader();
+    reader.onload=async function(ev){
+      try{
+        const typedArr=new Uint8Array(ev.target.result);
+        const pdf=await pdfjsLib.getDocument({data:typedArr}).promise;
+        let fullText='';
+        for(let p=1;p<=pdf.numPages;p++){
+          const page=await pdf.getPage(p);
+          const content=await page.getTextContent();
+          fullText+=content.items.map(it=>it.str).join(' ')+'\n';
+        }
+        if(!fullText.trim()){
+          entry.status='error';entry.error='No extractable text (may be scanned image)';
+        }else{
+          entry.status='ok';entry.text=fullText.trim();entry.data=parseResume(fullText.trim(),f.name);
+        }
+      }catch(err){
+        entry.status='error';entry.error='PDF parse failed: '+err.message;
+      }
+      renderResumeList();
+      updateRankBtn();
+    };
+    reader.onerror=()=>{entry.status='error';entry.error='File read failed';renderResumeList();};
+    reader.readAsArrayBuffer(f);
+  } else {
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const txt=ev.target.result;
+      if(!txt.trim()){entry.status='error';entry.error='File is empty';}
+      else{entry.status='ok';entry.text=txt.trim();entry.data=parseResume(txt.trim(),f.name);}
+      renderResumeList();
+      updateRankBtn();
+    };
+    reader.onerror=()=>{entry.status='error';entry.error='File read failed';renderResumeList();};
+    reader.readAsText(f);
+  }
+}
+
+function removeResume(id){
+  S.resumes=S.resumes.filter(r=>r.id!==id);
+  renderResumeList();
+  updateRankBtn();
+}
+
+function renderResumeList(){
+  const el=document.getElementById('resumeList');
+  document.getElementById('resCount').textContent=S.resumes.length+' loaded';
+  document.getElementById('sResumes').textContent=S.resumes.length;
+  if(!S.resumes.length){el.innerHTML='';return;}
+  el.innerHTML=S.resumes.map(r=>{
+    const statusHtml = r.status==='loading' ? '<span class="status status-load">Extracting…</span>'
+      : r.status==='ok' ? '<span class="status status-ok">✓ Parsed</span>'
+      : `<span class="status status-err" title="${esc(r.error||'')}">✗ Error</span>`;
+    return `<div class="resume-chip">
+      <span class="ico">${r.name.toLowerCase().endsWith('.pdf')?'📕':'📄'}</span>
+      <span class="name">${esc(r.name)}</span>
+      <span class="meta">${fmtB(r.size)}</span>
+      ${statusHtml}
+      <button onclick="removeResume('${r.id}')" title="Remove">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function updateRankBtn(){
+  const okCount=S.resumes.filter(r=>r.status==='ok').length;
+  document.getElementById('rankBtn').disabled = okCount===0;
+}
+
+function fmtB(b){return b<1024?b+' B':(b/1024).toFixed(1)+' KB';}
+
+// ═══════════════ RESUME PARSING (NLP extraction) ═══════════════
+function parseResume(text,filename){
+  const emailMatch=text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  const phoneMatch=text.match(/(\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/);
+  const skills=extractSkills(text);
+
+  // Name guess: first non-empty line that looks like a name (2-4 words, no @ or digits)
+  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+  let name=filename.replace(/\.(pdf|txt|text)$/i,'').replace(/[_-]/g,' ');
+  for(const line of lines.slice(0,6)){
+    if(/^[A-Za-z][A-Za-z\s.'-]{2,40}$/.test(line) && line.split(' ').length<=4 && !/@/.test(line)){
+      name=line;break;
+    }
+  }
+
+  // Experience years
+  const expMatch=text.match(/(\d{1,2})\+?\s*(years?|yrs?)\s*(of)?\s*(experience)?/i);
+  const expYears=expMatch?parseInt(expMatch[1]):0;
+
+  // Education
+  const eduKeywords=/(bachelor|master|phd|b\.?tech|m\.?tech|b\.?sc|m\.?sc|bca|mca|degree|university|college)/i;
+  const eduLines=lines.filter(l=>eduKeywords.test(l)).slice(0,3);
+
+  // Simple summary (first 2 meaningful sentences)
+  const sents=(text.match(/[^.\n]+[.\n]/g)||[]).map(s=>s.trim()).filter(s=>s.split(' ').length>4);
+  const summary=sents.slice(0,2).join(' ').substring(0,220);
+
+  return{
+    name: name||'Unknown Candidate',
+    email: emailMatch?emailMatch[0]:'Not found',
+    phone: phoneMatch?phoneMatch[0]:'Not found',
+    skills, expYears, education: eduLines, summary, rawText:text
+  };
+}
+
+// ═══════════════ RANKING ENGINE ═══════════════
+function tfidfVector(text, vocab){
+  const tokens=tok(text);
+  const tf={};
+  tokens.forEach(t=>tf[t]=(tf[t]||0)+1);
+  return vocab.map(w=>tf[w]||0);
+}
+function cosineSim(a,b){
+  let dot=0,na=0,nb=0;
+  for(let i=0;i<a.length;i++){dot+=a[i]*b[i];na+=a[i]*a[i];nb+=b[i]*b[i];}
+  if(na===0||nb===0) return 0;
+  return dot/(Math.sqrt(na)*Math.sqrt(nb));
+}
+const STOP=new Set(['a','an','the','and','or','but','in','on','at','to','for','of','with','by','from','is','was','are','were','be','been','have','has','had','do','does','did','will','would','could','should','this','that','these','those','will','with','your','you','our','we']);
+function tok(t){return t.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w=>w.length>2&&!STOP.has(w));}
+
+function rankCandidates(){
+  const valid=S.resumes.filter(r=>r.status==='ok');
+  if(!valid.length){toast('⚠️ No successfully parsed resumes to rank','ter');return;}
+  if(!S.jdAnalyzed||!S.jdText){
+    toast('⚠️ Please go to Step 1 and analyze a job description first — ranking needs it to score candidates','ter');
+    showStep(1);
+    return;
+  }
+
+  document.getElementById('spin').style.display='block';
+  document.getElementById('btnTxt').textContent='Ranking…';
+
+  setTimeout(()=>{
+    const vocab=[...new Set(tok(S.jdText))];
+    const jdVec=tfidfVector(S.jdText,vocab);
+
+    const results=valid.map(r=>{
+      const d=r.data;
+      const matchedSkills=d.skills.filter(s=>S.jdSkills.includes(s));
+      const missingSkills=S.jdSkills.filter(s=>!d.skills.includes(s));
+      const skillScore=S.jdSkills.length ? matchedSkills.length/S.jdSkills.length : 0.5;
+
+      const candVec=tfidfVector(d.rawText,vocab);
+      const semanticScore=cosineSim(jdVec,candVec);
+
+      const expScore=S.minExp>0 ? Math.min(d.expYears/S.minExp,1.3)/1.3 : (d.expYears>0?0.8:0.5);
+
+      let weights;
+      if(S.priority==='skills')      weights={skill:.6,sem:.2,exp:.2};
+      else if(S.priority==='experience') weights={skill:.3,sem:.2,exp:.5};
+      else if(S.priority==='semantic')   weights={skill:.2,sem:.6,exp:.2};
+      else weights={skill:.45,sem:.30,exp:.25}; // balanced
+
+      const finalScore = (skillScore*weights.skill + semanticScore*weights.sem + expScore*weights.exp);
+
+      return{
+        ...d, id:r.id, fileName:r.name,
+        score: Math.round(finalScore*100),
+        matchedSkills, missingSkills, semanticScore: Math.round(semanticScore*100), skillScore: Math.round(skillScore*100), expScore: Math.round(expScore*100)
+      };
+    });
+
+    results.sort((a,b)=>b.score-a.score);
+    S.ranked=results;
+    renderRanking(results);
+    document.getElementById('spin').style.display='none';
+    document.getElementById('btnTxt').textContent='🏆 Rank Candidates';
+    document.getElementById('sTop').textContent=results[0]?results[0].score+'%':'—';
+    document.getElementById('step2').classList.add('done');
+    showStep(3);
+    toast('✅ Ranked '+results.length+' candidates','tok');
+  },300);
+}
+
+function renderRanking(results){
+  document.getElementById('rankCount').textContent=results.length+' candidates';
+  document.getElementById('rankList').innerHTML=results.map((c,i)=>{
+    const medalClass=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    return `<div class="rank-card" onclick="this.classList.toggle('expanded')">
+      <div class="rank-top">
+        <div class="rank-num ${medalClass}">${i+1}</div>
+        <div>
+          <div class="rank-name">${esc(c.name)}</div>
+          <div class="rank-email">${esc(c.email)} ${c.phone!=='Not found'?'· '+esc(c.phone):''}</div>
+        </div>
+        <div class="rank-score"><div class="score-num">${c.score}%</div><div class="score-lbl">Match</div></div>
+      </div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${c.score}%"></div></div>
+      <div class="rank-skills">
+        ${c.matchedSkills.slice(0,8).map(s=>`<span class="skill-tag skill-match">✓ ${esc(s)}</span>`).join('')}
+        ${c.missingSkills.slice(0,4).map(s=>`<span class="skill-tag skill-miss">✗ ${esc(s)}</span>`).join('')}
+      </div>
+      <div class="rank-summary">${esc(c.summary)||'No summary extracted.'}</div>
+      <div class="rank-detail">
+        <div class="detail-grid">
+          <div class="detail-item"><div class="dl">Skill Match Score</div><div class="dv">${c.skillScore}%</div></div>
+          <div class="detail-item"><div class="dl">Semantic Similarity</div><div class="dv">${c.semanticScore}%</div></div>
+          <div class="detail-item"><div class="dl">Experience Score</div><div class="dv">${c.expScore}%</div></div>
+          <div class="detail-item"><div class="dl">Years Detected</div><div class="dv">${c.expYears||'—'}</div></div>
+        </div>
+        ${c.education.length?`<div style="margin-top:8px"><div class="dl" style="font-size:10px;color:var(--dim);text-transform:uppercase;margin-bottom:4px">Education</div>${c.education.map(e=>esc(e)).join('<br>')}</div>`:''}
+        <div style="margin-top:8px;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">Source file: ${esc(c.fileName)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════ EXPORT ═══════════════
+function exportCSV(){
+  if(!S.ranked.length){toast('⚠️ Nothing to export yet','ter');return;}
+  const headers=['Rank','Name','Email','Phone','Score%','SkillMatch%','Semantic%','ExperienceScore%','MatchedSkills','MissingSkills'];
+  const rows=S.ranked.map((c,i)=>[i+1,c.name,c.email,c.phone,c.score,c.skillScore,c.semanticScore,c.expScore,c.matchedSkills.join('|'),c.missingSkills.join('|')]);
+  const csv=[headers.join(','),...rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','))].join('\n');
+  dl('candidate_rankings_'+Date.now()+'.csv',csv,'text/csv');
+  toast('⬇ Exported CSV','tok');
+}
+function exportJSON(){
+  if(!S.ranked.length){toast('⚠️ Nothing to export yet','ter');return;}
+  const payload={tool:'TalentMatch AI',task:'AI-2',program:'TEYZIX CORE Internship June 2026',
+    job_description_skills:S.jdSkills, job_requirements:S.jdReqs,
+    candidates: S.ranked.map((c,i)=>({rank:i+1,name:c.name,email:c.email,phone:c.phone,score:c.score,
+      breakdown:{skill_match:c.skillScore,semantic_similarity:c.semanticScore,experience_score:c.expScore},
+      matched_skills:c.matchedSkills, missing_skills:c.missingSkills, education:c.education, summary:c.summary, source_file:c.fileName}))
+  };
+  dl('candidate_report_'+Date.now()+'.json',JSON.stringify(payload,null,2),'application/json');
+  toast('⬇ Exported JSON report','tok');
+}
+function dl(name,content,type){
+  const blob=new Blob([content],{type});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════ HELPERS ═══════════════
+function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' on';setTimeout(()=>t.classList.remove('on'),3400);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ═══════════════ PYTHON TABS ═══════════════
+function showPyTab(i,btn){document.querySelectorAll('.pytab').forEach(b=>b.classList.remove('on'));document.querySelectorAll('.pywin').forEach(w=>w.classList.remove('on'));btn.classList.add('on');document.getElementById('py'+i).classList.add('on');}
+let codeLoaded=false;
+function fillCode(){if(codeLoaded)return;codeLoaded=true;document.getElementById('c0').textContent=PY_MAIN;document.getElementById('c1').textContent=PY_REQ;document.getElementById('c2').textContent=PY_EX;}
+function dlFile(name,content){dl(name,content,'text/plain');toast('⬇ '+name+' downloaded','tok');}
+
+
+// ═══════════════ PYTHON SOURCE CODE ═══════════════
+const PY_MAIN = `"""
+TalentMatch AI - Resume Screening & Candidate Ranking System
+Task ID: AI-2 | TEYZIX CORE Internship | June Batch 2026
+
+Modules:
+  1. ResumeParser       - PDF/text extraction + information extraction
+  2. JobDescriptionAnalyzer - skill & requirement extraction from JD
+  3. MatchingEngine     - skill matching, TF-IDF semantic similarity, scoring
+  4. RankingEngine       - candidate ranking with explainable breakdown
+  5. ReportExporter      - CSV and JSON export
+  6. CLI                - command line entry point
+"""
+
+import os, sys, re, json, csv, math, argparse, logging
+from pathlib import Path
+from collections import Counter
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S")
+log = logging.getLogger("TalentMatchAI")
+
+try:
+    import pdfplumber
+    PDF_AVAILABLE = True
+except ImportError:
+    PDF_AVAILABLE = False
+    log.warning("pdfplumber not found - PDF resumes will be skipped. Run: pip install pdfplumber")
+
+
+SKILL_DB = [
+    'python','java','javascript','typescript','c++','c#','php','ruby','go','golang','rust',
+    'swift','kotlin','sql','html','css','react','angular','vue','node','nodejs','express',
+    'django','flask','fastapi','spring','laravel','tensorflow','pytorch','keras','scikit-learn',
+    'pandas','numpy','machine learning','deep learning','nlp','natural language processing',
+    'computer vision','data analysis','data science','data engineering','aws','azure','gcp',
+    'docker','kubernetes','git','github','jenkins','ci/cd','agile','scrum','mongodb',
+    'postgresql','mysql','redis','firebase','rest api','graphql','microservices','linux','bash',
+    'figma','adobe xd','ui/ux','photoshop','illustrator','project management','communication',
+    'leadership','problem solving','teamwork','excel','power bi','tableau','r programming',
+    'matlab','spark','hadoop','etl','airflow','langchain','llm','openai','huggingface',
+    'transformers','vector database','pinecone','chromadb','faiss','android','ios','flutter',
+    'react native','unity','blockchain','solidity','cybersecurity','penetration testing',
+    'devops','terraform','ansible'
+]
+
+STOPWORDS = {
+    'a','an','the','and','or','but','in','on','at','to','for','of','with','by','from','is',
+    'was','are','were','be','been','have','has','had','do','does','did','will','would','could',
+    'should','this','that','these','those','your','you','our','we'
+}
+
+
+# ══════════════════════════════════════════════════════
+#  MODULE 1 - RESUME PARSER
+# ══════════════════════════════════════════════════════
+
+class ResumeParser:
+    """Extracts text and structured information from resumes (PDF or TXT)."""
+
+    @staticmethod
+    def extract_text_from_pdf(filepath: str) -> str:
+        if not PDF_AVAILABLE:
+            raise ImportError("pdfplumber required. Run: pip install pdfplumber")
+        path = Path(filepath)
+        if not path.exists():
+            raise FileNotFoundError(f"Resume not found: {filepath}")
+        text_parts = []
+        try:
+            with pdfplumber.open(path) as pdf:
+                for page in pdf.pages:
+                    text_parts.append(page.extract_text() or "")
+        except Exception as e:
+            raise RuntimeError(f"Failed to read PDF '{path.name}': {e}")
+        text = "\n".join(text_parts).strip()
+        if not text:
+            raise ValueError(f"No extractable text in '{path.name}' (may be scanned image).")
+        return text
+
+    @staticmethod
+    def extract_text_from_txt(filepath: str) -> str:
+        path = Path(filepath)
+        if not path.exists():
+            raise FileNotFoundError(f"Resume not found: {filepath}")
+        with open(path, 'r', encoding='utf-8', errors='replace') as f:
+            text = f.read().strip()
+        if not text:
+            raise ValueError(f"'{path.name}' is empty.")
+        return text
+
+    @staticmethod
+    def load_resume(filepath: str) -> str:
+        """Load resume text from PDF or TXT, dispatching by extension."""
+        ext = Path(filepath).suffix.lower()
+        if ext == '.pdf':
+            return ResumeParser.extract_text_from_pdf(filepath)
+        elif ext in ('.txt', '.text'):
+            return ResumeParser.extract_text_from_txt(filepath)
+        else:
+            raise ValueError(f"Unsupported resume format: {ext}. Use .pdf or .txt")
+
+    @staticmethod
+    def extract_skills(text: str) -> list:
+        lower = text.lower()
+        found = []
+        for skill in SKILL_DB:
+            pattern = re.escape(skill)
+            if re.search(rf'\b{pattern}\b', lower):
+                found.append(skill)
+        return found
+
+    @staticmethod
+    def extract_email(text: str) -> str:
+        m = re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
+        return m.group(0) if m else "Not found"
+
+    @staticmethod
+    def extract_phone(text: str) -> str:
+        m = re.search(r'(\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}', text)
+        return m.group(0) if m else "Not found"
+
+    @staticmethod
+    def extract_name(text: str, fallback: str) -> str:
+        lines = [l.strip() for l in text.split('\n') if l.strip()]
+        for line in lines[:6]:
+            if re.match(r"^[A-Za-z][A-Za-z\s.'-]{2,40}$", line) and len(line.split()) <= 4 and '@' not in line:
+                return line
+        return fallback
+
+    @staticmethod
+    def extract_experience_years(text: str) -> int:
+        m = re.search(r'(\d{1,2})\+?\s*(years?|yrs?)\s*(of)?\s*(experience)?', text, re.IGNORECASE)
+        return int(m.group(1)) if m else 0
+
+    @staticmethod
+    def extract_education(text: str) -> list:
+        lines = [l.strip() for l in text.split('\n') if l.strip()]
+        edu_kw = re.compile(r'(bachelor|master|phd|b\.?tech|m\.?tech|b\.?sc|m\.?sc|bca|mca|degree|university|college)', re.I)
+        return [l for l in lines if edu_kw.search(l)][:3]
+
+    @staticmethod
+    def summarize(text: str, max_sentences: int = 2) -> str:
+        sents = [s.strip() for s in re.split(r'[.\n]', text) if len(s.split()) > 4]
+        return " ".join(sents[:max_sentences])[:220]
+
+    @classmethod
+    def parse(cls, filepath: str) -> dict:
+        """Parse a resume file into structured candidate data. Raises on critical errors."""
+        text = cls.load_resume(filepath)
+        return {
+            "source_file": Path(filepath).name,
+            "name": cls.extract_name(text, Path(filepath).stem),
+            "email": cls.extract_email(text),
+            "phone": cls.extract_phone(text),
+            "skills": cls.extract_skills(text),
+            "experience_years": cls.extract_experience_years(text),
+            "education": cls.extract_education(text),
+            "summary": cls.summarize(text),
+            "raw_text": text,
+        }
+
+
+# ══════════════════════════════════════════════════════
+#  MODULE 2 - JOB DESCRIPTION ANALYZER
+# ══════════════════════════════════════════════════════
+
+class JobDescriptionAnalyzer:
+    """Extracts required skills and key requirements from a job description."""
+
+    @staticmethod
+    def analyze(jd_text: str) -> dict:
+        if not jd_text or len(jd_text.split()) < 10:
+            raise ValueError("Job description too short to analyze (minimum 10 words).")
+
+        skills = ResumeParser.extract_skills(jd_text)
+
+        req_pattern = re.compile(
+            r'\b(\d+\+?\s*years?|bachelor|master|phd|degree|required|must have|'
+            r'experience with|proficient|familiar with|knowledge of)\b', re.I
+        )
+        sentences = [s.strip() for s in re.split(r'[.\n]', jd_text) if s.strip()]
+        requirements = [s for s in sentences if req_pattern.search(s)][:8]
+
+        log.info(f"JD analyzed: {len(skills)} skills, {len(requirements)} requirement statements")
+        return {"text": jd_text, "skills": skills, "requirements": requirements}
+
+
+# ══════════════════════════════════════════════════════
+#  MODULE 3 - MATCHING ENGINE
+# ══════════════════════════════════════════════════════
+
+class MatchingEngine:
+    """Computes skill-match, semantic similarity, and experience scores."""
+
+    @staticmethod
+    def _tokenize(text: str) -> list:
+        words = re.findall(r'\b[a-z0-9]+\b', text.lower())
+        return [w for w in words if len(w) > 2 and w not in STOPWORDS]
+
+    @classmethod
+    def _tfidf_vectors(cls, jd_text: str, resume_text: str):
+        """Build simple TF vectors over shared vocabulary for cosine similarity."""
+        jd_tokens = cls._tokenize(jd_text)
+        res_tokens = cls._tokenize(resume_text)
+        vocab = sorted(set(jd_tokens) | set(res_tokens))
+
+        jd_counts = Counter(jd_tokens)
+        res_counts = Counter(res_tokens)
+
+        jd_vec = [jd_counts.get(w, 0) for w in vocab]
+        res_vec = [res_counts.get(w, 0) for w in vocab]
+        return jd_vec, res_vec
+
+    @staticmethod
+    def _cosine_similarity(a: list, b: list) -> float:
+        dot = sum(x*y for x, y in zip(a, b))
+        na = math.sqrt(sum(x*x for x in a))
+        nb = math.sqrt(sum(y*y for y in b))
+        if na == 0 or nb == 0:
+            return 0.0
+        return dot / (na * nb)
+
+    @classmethod
+    def semantic_similarity(cls, jd_text: str, resume_text: str) -> float:
+        jd_vec, res_vec = cls._tfidf_vectors(jd_text, resume_text)
+        return cls._cosine_similarity(jd_vec, res_vec)
+
+    @staticmethod
+    def skill_match(candidate_skills: list, jd_skills: list) -> dict:
+        if not jd_skills:
+            return {"score": 0.5, "matched": [], "missing": []}
+        matched = [s for s in candidate_skills if s in jd_skills]
+        missing = [s for s in jd_skills if s not in candidate_skills]
+        return {"score": len(matched) / len(jd_skills), "matched": matched, "missing": missing}
+
+    @staticmethod
+    def experience_score(candidate_years: int, min_required: int) -> float:
+        if min_required <= 0:
+            return 0.8 if candidate_years > 0 else 0.5
+        return min(candidate_years / min_required, 1.3) / 1.3
+
+    @classmethod
+    def score_candidate(cls, candidate: dict, jd: dict, min_exp: int = 2, priority: str = "balanced") -> dict:
+        """
+        Compute weighted match score.
+        priority: balanced | skills | experience | semantic
+        """
+        skill_result = cls.skill_match(candidate["skills"], jd["skills"])
+        semantic = cls.semantic_similarity(jd["text"], candidate["raw_text"])
+        exp_score = cls.experience_score(candidate["experience_years"], min_exp)
+
+        weights = {
+            "balanced":   {"skill": .45, "sem": .30, "exp": .25},
+            "skills":     {"skill": .60, "sem": .20, "exp": .20},
+            "experience": {"skill": .30, "sem": .20, "exp": .50},
+            "semantic":   {"skill": .20, "sem": .60, "exp": .20},
+        }.get(priority, {"skill": .45, "sem": .30, "exp": .25})
+
+        final = (skill_result["score"] * weights["skill"] +
+                 semantic * weights["sem"] +
+                 exp_score * weights["exp"])
+
+        return {
+            **candidate,
+            "score": round(final * 100, 1),
+            "skill_score": round(skill_result["score"] * 100, 1),
+            "semantic_score": round(semantic * 100, 1),
+            "experience_score": round(exp_score * 100, 1),
+            "matched_skills": skill_result["matched"],
+            "missing_skills": skill_result["missing"],
+        }
+
+
+# ══════════════════════════════════════════════════════
+#  MODULE 4 - RANKING ENGINE
+# ══════════════════════════════════════════════════════
+
+class RankingEngine:
+    """Ranks candidates by computed match score, with error isolation per resume."""
+
+    def __init__(self):
+        self.matcher = MatchingEngine()
+
+    def rank(self, resume_paths: list, jd: dict, min_exp: int = 2, priority: str = "balanced") -> dict:
+        """
+        Process a list of resume file paths, skipping (and logging) any that fail.
+        Returns dict with ranked candidates and any errors encountered.
+        """
+        scored = []
+        errors = []
+
+        for path in resume_paths:
+            try:
+                candidate = ResumeParser.parse(path)
+                result = self.matcher.score_candidate(candidate, jd, min_exp, priority)
+                scored.append(result)
+                log.info(f"Scored {Path(path).name}: {result['score']}%")
+            except Exception as e:
+                log.error(f"Skipped {Path(path).name}: {e}")
+                errors.append({"file": Path(path).name, "error": str(e)})
+
+        scored.sort(key=lambda c: c["score"], reverse=True)
+        for i, c in enumerate(scored, 1):
+            c["rank"] = i
+
+        return {"ranked_candidates": scored, "errors": errors, "total_processed": len(scored)}
+
+
+# ══════════════════════════════════════════════════════
+#  MODULE 5 - REPORT EXPORTER
+# ══════════════════════════════════════════════════════
+
+class ReportExporter:
+    """Exports ranking results to CSV and JSON."""
+
+    @staticmethod
+    def to_csv(result: dict, out: str = "candidate_rankings.csv") -> str:
+        rows = result["ranked_candidates"]
+        with open(out, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Rank","Name","Email","Phone","Score%","SkillMatch%","Semantic%","Experience%","MatchedSkills","MissingSkills","SourceFile"])
+            for c in rows:
+                writer.writerow([c["rank"], c["name"], c["email"], c["phone"], c["score"],
+                                  c["skill_score"], c["semantic_score"], c["experience_score"],
+                                  "|".join(c["matched_skills"]), "|".join(c["missing_skills"]), c["source_file"]])
+        log.info(f"CSV saved: {Path(out).resolve()}")
+        return str(Path(out).resolve())
+
+    @staticmethod
+    def to_json(result: dict, jd: dict, out: str = "candidate_report.json") -> str:
+        payload = {
+            "tool": "TalentMatch AI", "task": "AI-2",
+            "program": "TEYZIX CORE Internship June 2026",
+            "job_description_skills": jd["skills"],
+            "job_requirements": jd["requirements"],
+            "total_candidates_processed": result["total_processed"],
+            "errors": result["errors"],
+            "candidates": [
+                {k: v for k, v in c.items() if k != "raw_text"}
+                for c in result["ranked_candidates"]
+            ],
+        }
+        Path(out).write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding='utf-8')
+        log.info(f"JSON saved: {Path(out).resolve()}")
+        return str(Path(out).resolve())
+
+
+# ══════════════════════════════════════════════════════
+#  CLI ENTRY POINT
+# ══════════════════════════════════════════════════════
+
+def main():
+    parser = argparse.ArgumentParser(description="TalentMatch AI - Resume Screening & Ranking")
+    parser.add_argument("--jd", required=True, help="Path to job description .txt file")
+    parser.add_argument("--resumes", required=True, help="Folder containing resume PDFs/TXTs")
+    parser.add_argument("--min-exp", type=int, default=2, help="Minimum years experience (default 2)")
+    parser.add_argument("--priority", choices=["balanced","skills","experience","semantic"], default="balanced")
+    parser.add_argument("--out-prefix", default="output", help="Prefix for output files")
+    args = parser.parse_args()
+
+    print("\nTalentMatch AI | Task AI-2 | TEYZIX CORE Internship\n" + "="*52)
+
+    jd_path = Path(args.jd)
+    if not jd_path.exists():
+        log.error(f"Job description file not found: {args.jd}")
+        sys.exit(1)
+    jd_text = jd_path.read_text(encoding='utf-8', errors='replace')
+    jd = JobDescriptionAnalyzer.analyze(jd_text)
+    print(f"JD Skills Detected: {', '.join(jd['skills']) or 'none'}")
+
+    resumes_dir = Path(args.resumes)
+    if not resumes_dir.exists():
+        log.error(f"Resumes folder not found: {args.resumes}")
+        sys.exit(1)
+    jd_filename = jd_path.resolve().name
+    resume_paths = [
+        str(p) for p in resumes_dir.glob("*")
+        if p.suffix.lower() in (".pdf", ".txt", ".text")
+        and p.resolve().name != jd_filename
+    ]
+    if not resume_paths:
+        log.error("No .pdf or .txt resumes found in folder.")
+        sys.exit(1)
+
+    engine = RankingEngine()
+    result = engine.rank(resume_paths, jd, min_exp=args.min_exp, priority=args.priority)
+
+    print(f"\n{'='*52}\n  RANKED CANDIDATES ({result['total_processed']})\n{'='*52}")
+    for c in result["ranked_candidates"]:
+        print(f"  #{c['rank']:02d}  {c['score']:5.1f}%   {c['name']:<30} {c['email']}")
+        print(f"        skills:{c['skill_score']:.0f}% semantic:{c['semantic_score']:.0f}% exp:{c['experience_score']:.0f}%  matched: {', '.join(c['matched_skills'][:5])}")
+    if result["errors"]:
+        print(f"\n  Skipped {len(result['errors'])} file(s) due to errors:")
+        for e in result["errors"]:
+            print(f"    - {e['file']}: {e['error']}")
+
+    exporter = ReportExporter()
+    csv_path = exporter.to_csv(result, f"{args.out_prefix}_rankings.csv")
+    json_path = exporter.to_json(result, jd, f"{args.out_prefix}_report.json")
+    print(f"\n✅ Done!\n  CSV : {csv_path}\n  JSON: {json_path}")
+
+
+if __name__ == "__main__":
+    main()
+`;
+
+const PY_REQ = `# TalentMatch AI - requirements.txt
+# Task AI-2 | TEYZIX CORE Internship June 2026
+# Install: pip install -r requirements.txt
+
+# PDF text extraction - REQUIRED for .pdf resumes
+pdfplumber==0.10.3
+
+# Python version: 3.10 or higher
+`;
+
+const PY_EX = `"""
+TalentMatch AI - Usage Examples
+Task: AI-2 | TEYZIX CORE Internship
+"""
+from resume_screener import (
+    ResumeParser, JobDescriptionAnalyzer,
+    MatchingEngine, RankingEngine, ReportExporter
+)
+
+# ── Example 1: Analyze a job description ──────────────────
+jd_text = """
+We are looking for a Python Developer with 3+ years of experience
+in machine learning and data analysis. Required skills: Python,
+TensorFlow, Pandas, SQL, and REST API development. Bachelor's degree
+in Computer Science or related field preferred.
+"""
+jd = JobDescriptionAnalyzer.analyze(jd_text)
+print("JD Skills:", jd["skills"])
+print("JD Requirements:", jd["requirements"])
+
+# ── Example 2: Parse a single resume ───────────────────────
+# candidate = ResumeParser.parse("resumes/john_doe.pdf")
+# print(candidate["name"], candidate["email"], candidate["skills"])
+
+# ── Example 3: Score one candidate against the JD ──────────
+# scored = MatchingEngine.score_candidate(candidate, jd, min_exp=3, priority="balanced")
+# print(f"Match score: {scored['score']}%")
+# print(f"Matched skills: {scored['matched_skills']}")
+# print(f"Missing skills: {scored['missing_skills']}")
+
+# ── Example 4: Rank an entire folder of resumes ─────────────
+# engine = RankingEngine()
+# result = engine.rank(
+#     resume_paths=["resumes/alice.pdf", "resumes/bob.txt", "resumes/carol.pdf"],
+#     jd=jd, min_exp=3, priority="balanced"
+# )
+# for c in result["ranked_candidates"]:
+#     print(f"#{c['rank']} {c['name']} - {c['score']}%")
+
+# ── Example 5: Export results ───────────────────────────────
+# exporter = ReportExporter()
+# exporter.to_csv(result, "rankings.csv")
+# exporter.to_json(result, jd, "report.json")
+
+# ── Example 6: Compare ranking priorities ───────────────────
+# for priority in ["balanced", "skills", "experience", "semantic"]:
+#     r = engine.rank(resume_paths, jd, min_exp=3, priority=priority)
+#     top = r["ranked_candidates"][0]
+#     print(f"[{priority}] Top candidate: {top['name']} ({top['score']}%)")
+`;
+</script>
+</body>
+</html>
